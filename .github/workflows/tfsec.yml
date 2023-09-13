@@ -7,7 +7,7 @@ on:
 
 jobs:
     tfsec-base:
-        name: tfsec sarif report
+        name: tfsec sarif report - BASE
         runs-on: ubuntu-latest
 
         steps:
@@ -26,7 +26,7 @@ jobs:
                     sarif_file: tfsec.sarif
 
     tfsec-aws-backend:
-        name: tfsec sarif report
+        name: tfsec sarif report - AWS-BACKEND
         runs-on: ubuntu-latest
 
         steps:
@@ -46,7 +46,7 @@ jobs:
                     sarif_file: tfsec-aws-backend.sarif
 
     tfsec-three-tier-app-with-vpc:
-        name: tfsec sarif report
+        name: tfsec sarif report - THREE TIER WEB APP WITH VPC
         runs-on: ubuntu-latest
 
         steps:
@@ -56,11 +56,11 @@ jobs:
             -   name: tfsec backend
                 uses: tfsec/tfsec-sarif-action@master
                 with:
-                    working_directory: three-tier-app-with-vpc
-                    sarif_file: tfsec-three-tier-app-with-vpc.sarif
+                    working_directory: three-tier-web-app-with-vpc
+                    sarif_file: tfsec-three-tier-web-app-with-vpc.sarif
 
             -   name: Upload base SARIF file
                 uses: github/codeql-action/upload-sarif@v1
                 with:
                     # Path to SARIF file relative to the root of the repository
-                    sarif_file: tfsec-three-tier-app-with-vpc.sarif
+                    sarif_file: tfsec-three-tier-web-app-with-vpc.sarif
