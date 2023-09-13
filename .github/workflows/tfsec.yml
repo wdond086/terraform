@@ -6,45 +6,61 @@ on:
   pull_request:
 
 jobs:
-  tfsec:
-    name: tfsec sarif report
-    runs-on: ubuntu-latest
+    tfsec-base:
+        name: tfsec sarif report
+        runs-on: ubuntu-latest
 
-    steps:
-        -   name: Clone repo
-            uses: actions/checkout@main
+        steps:
+            -   name: Clone repo
+                uses: actions/checkout@main
 
-        -   name: tfsec base
-            uses: tfsec/tfsec-sarif-action@master
-            with:
-                sarif_file: tfsec.sarif                  
+            -   name: tfsec base
+                uses: tfsec/tfsec-sarif-action@master
+                with:
+                    sarif_file: tfsec.sarif                  
 
-        -   name: Upload base SARIF file
-            uses: github/codeql-action/upload-sarif@v1
-            with:
-                # Path to SARIF file relative to the root of the repository
-                sarif_file: tfsec.sarif   
-                
-        -   name: tfsec backend
-            uses: tfsec/tfsec-sarif-action@master
-            with:
-                working_directory: aws-backend
-                sarif_file: tfsec-aws-backend.sarif
+            -   name: Upload base SARIF file
+                uses: github/codeql-action/upload-sarif@v1
+                with:
+                    # Path to SARIF file relative to the root of the repository
+                    sarif_file: tfsec.sarif
 
-        -   name: Upload base SARIF file
-            uses: github/codeql-action/upload-sarif@v1
-            with:
-                # Path to SARIF file relative to the root of the repository
-                sarif_file: tfsec-aws-backend.sarif
+    tfsec-aws-backend:
+        name: tfsec sarif report
+        runs-on: ubuntu-latest
 
-        -   name: tfsec backend
-            uses: tfsec/tfsec-sarif-action@master
-            with:
-                working_directory: three-tier-web-app-with-vpc
-                sarif_file: tfsec-three-tier-web-app-with-vpc.sarif
-    
-        -   name: Upload base SARIF file
-            uses: github/codeql-action/upload-sarif@v1
-            with:
-                # Path to SARIF file relative to the root of the repository
-                sarif_file: tfsec-three-tier-web-app-with-vpc.sarif
+        steps:
+            -   name: Clone repo
+                uses: actions/checkout@main
+
+            -   name: tfsec backend
+                uses: tfsec/tfsec-sarif-action@master
+                with:
+                    working_directory: aws-backend
+                    sarif_file: tfsec-aws-backend.sarif
+
+            -   name: Upload base SARIF file
+                uses: github/codeql-action/upload-sarif@v1
+                with:
+                    # Path to SARIF file relative to the root of the repository
+                    sarif_file: tfsec-aws-backend.sarif
+
+    tfsec-three-tier-app-with-vpc:
+        name: tfsec sarif report
+        runs-on: ubuntu-latest
+
+        steps:
+            -   name: Clone repo
+                uses: actions/checkout@main
+
+            -   name: tfsec backend
+                uses: tfsec/tfsec-sarif-action@master
+                with:
+                    working_directory: three-tier-app-with-vpc
+                    sarif_file: tfsec-three-tier-app-with-vpc.sarif
+
+            -   name: Upload base SARIF file
+                uses: github/codeql-action/upload-sarif@v1
+                with:
+                    # Path to SARIF file relative to the root of the repository
+                    sarif_file: tfsec-three-tier-app-with-vpc.sarif
