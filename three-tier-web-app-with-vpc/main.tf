@@ -126,7 +126,7 @@ data "aws_subnets" "default_subnets" {
 resource "aws_alb" "web-app-alb" {
   name = "web-app-alb"
   load_balancer_type = "application"
-  subnets = data.aws_subnets.default_subnets
+  subnets = data.aws_subnets.default_subnets.ids
   security_groups = [ aws_security_group.alb_security_group.id ]
 }
 
@@ -148,7 +148,7 @@ resource "aws_lb_target_group" "web-app-alb-tg" {
   name = "web-app-alb-target-group"
   port = 8080
   protocol = "HTTP"
-  vpc_id = data.aws_vpc.default_vpc
+  vpc_id = data.aws_vpc.default_vpc.id
 
   health_check {
     path = "/"
@@ -199,9 +199,9 @@ resource "aws_db_instance" "db_instance" {
   engine                     = "postgres"
   engine_version             = "12"
   instance_class             = "db.t2.micro"
-  name                       = "web-app-db"
+  # name                       = "web-app-db"
   username                   = "foo"
-  password                   = "foobarbaz"
+  password                   = "foobarbaz" # I know, very bad. But its for a test
   skip_final_snapshot        = true
 }
 
