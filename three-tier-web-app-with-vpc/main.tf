@@ -55,8 +55,8 @@ resource "aws_instance" "ec2_instance_2" {
               EOF
 }
 
-resource "aws_s3_bucket" "s3_bucket" {
-  bucket_prefix = "wdond086_web-app-data" # Creates a unique bucket name beginning with the specified prefix.
+resource "aws_s3_bucket" "web-app-bucket" {
+  bucket_prefix = "wdond086-web-app-data" # Creates a unique bucket name beginning with the specified prefix.
   force_destroy = true # Indicates all objects (including any locked objects) should be deleted from the bucket when the bucket is destroyed so that the bucket can be destroyed without error.
   tags = {
     name = "s3_bucket"
@@ -64,20 +64,28 @@ resource "aws_s3_bucket" "s3_bucket" {
   }
 }
 
-resource "aws_s3_bucket_acl" "s3_bucket_acl" {
-  bucket = aws_s3_bucket.s3_bucket.id
+resource "aws_s3_bucket_ownership_controls" "web-app-bucket-boc" {
+  bucket = aws_s3_bucket.web-app-bucket.id
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
+
+resource "aws_s3_bucket_acl" "web-app-bucket-acl" {
+  bucket = aws_s3_bucket.web-app-bucket.id
+  depends_on = [ aws_s3_bucket_ownership_controls.web-app-bucket-boc ]
   acl = "private"
 }
 
-resource "aws_s3_bucket_versioning" "s3_bucket_versioning" {
-  bucket = aws_s3_bucket.s3_bucket.id
+resource "aws_s3_bucket_versioning" "web-app-bucket-versioning" {
+  bucket = aws_s3_bucket.web-app-bucket.id
   versioning_configuration {
     status = "Enabled"
   }
 }
 
-resource "aws_s3_bucket_server_side_encryption_configuration" "s3_bucket_sse_config" {
-  bucket = aws_s3_bucket.s3_bucket.id
+resource "aws_s3_bucket_server_side_encryption_configuration" "web-app-bucket-sse-config" {
+  bucket = aws_s3_bucket.web-app-bucket.id
   rule {
     apply_server_side_encryption_by_default {
       sse_algorithm = "AES256"
@@ -102,9 +110,9 @@ resource "aws_security_group_rule" "alb_security_group_allow_http_inbound_rule" 
 resource "aws_security_group_rule" "alb_security_group_allow_http_outbound_rule" {
   security_group_id = aws_security_group.alb_security_group.id
   type = "egress"
-  from_port = 0
-  to_port = 0
-  protocol = "-1"
+  from_port = 0 # Translates to all
+  to_port = 0 # Translates to all
+  protocol = "-1" # Translates to all
   cidr_blocks = [ "0.0.0.0/0" ]
 }
 
