@@ -65,7 +65,7 @@ resource "aws_iam_instance_profile" "ec2-instance-profile" {
 data "aws_iam_policy_document" "ec2-instance-profile-policy-document" {
   statement {
     actions   = ["s3:*"]
-    resources = [ aws_s3_bucket.web-app-bucket.bucket ]
+    resources = [aws_s3_bucket.web-app-bucket.bucket]
   }
 }
 
@@ -112,6 +112,28 @@ resource "aws_instance" "ec2_instance_1" {
   depends_on = [
     aws_iam_instance_profile.ec2-instance-profile,
   ]
+}
+
+# Example using count
+resource "aws_instance" "ec2_instance_count_example" {
+  count                = 3 # Will create 3 of these instances
+  ami                  = var.ami
+  instance_type        = var.instance_type
+  security_groups      = [aws_security_group.ec2_instances_sg.name]
+  iam_instance_profile = aws_iam_instance_profile.ec2-instance-profile.id
+  user_data            = <<-EOF
+              #!/bin/bash
+              echo "Hello, World from instance 1" > index.html
+              python3 -m http.server 8080 &
+              EOF
+
+  depends_on = [
+    aws_iam_instance_profile.ec2-instance-profile,
+  ]
+
+  tags = {
+    Name = "Server ${count.index}"
+  }
 }
 
 resource "aws_instance" "ec2_instance_2" {
