@@ -51,7 +51,7 @@ data "aws_iam_policy_document" "instance_assume_role_policy" {
   }
 }
 
-resource "aws_iam_role" "ec2-iam-role-thru-data-source" {
+resource "aws_iam_role" "ec2-iam-role-assume-role-policy-thru-data-source" {
   name               = "ec2-iam-role-2-thru-data-source"
   path               = "/"
   assume_role_policy = data.aws_iam_policy_document.instance_assume_role_policy.json
@@ -62,21 +62,29 @@ resource "aws_iam_instance_profile" "ec2-instance-profile" {
   role = aws_iam_role.ec2-iam-role.name
 }
 
+resource "aws_iam_instance_profile" "ec2-instance-profile-thru-data-source" {
+  name = "ec2-instance-profile-thru-data-source"
+  role = aws_iam_role.ec2-iam-role-assume-role-policy-thru-data-source.name
+}
+
 data "aws_iam_policy_document" "ec2-instance-profile-policy-document" {
   statement {
     actions   = ["s3:*"]
-    resources = [aws_s3_bucket.web-app-bucket.bucket]
+    resources = [aws_s3_bucket.web-app-bucket.arn]
   }
 }
 
 resource "aws_iam_role_policy" "ec2-iam-policy" {
   name = "ec2-iam-policy"
-  role = aws_iam_role.ec2-iam-role.name
+  role = aws_iam_role.ec2-iam-role.id
   policy = jsonencode({
     "Statement" = [
       {
         "Action" = "s3:*"
         "Effect" = "Allow"
+        "Resource" = [
+            "${aws_s3_bucket.web-app-bucket.arn}"
+        ]
       }
     ]
   })
@@ -84,7 +92,7 @@ resource "aws_iam_role_policy" "ec2-iam-policy" {
 
 resource "aws_iam_role_policy" "ec2-iam-policy-thru-data-source" {
   name   = "ec2-iam-policy-thru-data-source"
-  role   = aws_iam_role.ec2-iam-role.name
+  role   = aws_iam_role.ec2-iam-role-assume-role-policy-thru-data-source.id
   policy = data.aws_iam_policy_document.ec2-instance-profile-policy-document.json
 }
 
