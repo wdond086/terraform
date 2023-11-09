@@ -14,8 +14,8 @@ resource "aws_security_group_rule" "ec2_ingress_http_rule" {
   from_port         = 80
   to_port           = 80
   protocol          = "tcp"
-  cidr_blocks       = ["142.188.147.45/32"]
-  description       = "Allows HTTP traffic on port 80 from my IP"
+  cidr_blocks       = ["142.188.147.216/32", aws_vpc.custom_vpc.cidr_block]
+  description       = "Allows HTTP traffic on port 80 from my IP and from within the VPC"
 }
 
 # Rule to allow HTTP ingress traffic
@@ -27,7 +27,7 @@ resource "aws_security_group_rule" "ec2_ingress_ssh_rule" {
   protocol          = "tcp"
   # cidr_blocks       = ["142.188.147.45/32"]
   # cidr for instance connect retrieved from https://ip-ranges.amazonaws.com/ip-ranges.json
-  cidr_blocks       = ["142.188.147.45/32", "18.206.107.24/29"] # For testing
+  cidr_blocks       = ["142.188.147.216/32", "18.206.107.24/29"] # For testing
   description       = "Allows SSH traffic on port 22 from my IP"
 }
 
