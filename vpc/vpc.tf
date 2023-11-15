@@ -97,3 +97,84 @@ resource "aws_route_table_association" "public_subnets_2_rt_association" {
   subnet_id      = aws_subnet.public_subnets_2[each.key].id
   route_table_id = aws_route_table.custom_vpc_rt.id
 }
+
+# Creating an NACL to only allow ingress traffic to private subnet 2 from public subnet 2
+resource "aws_network_acl" "private_subnet_2_nacl" {
+  vpc_id = aws_vpc.custom_vpc.id
+  tags = {
+    Name        = "NACL to allow traffic between private subnet 2 and public subnet 2"
+    Project     = "sa_vpc"
+    Terraform   = "true"
+    Environment = "true"
+  }
+}
+
+# Retrieving private subnet 2
+data "aws_subnet" "private_subnet_2" {
+  tags = {
+    Name        = "Private Subnet 2"
+    Project     = "sa_vpc"
+    Terraform   = "true"
+    Environment = "dev"
+    Meta-Arg    = "count"
+  }
+}
+
+data "aws_subnet" "public_subnet_2" {
+  tags = {
+    Name        = "Public Subnet 2"
+    Project     = "sa_vpc"
+    Terraform   = "true"
+    Environment = "dev"
+    Meta-Arg    = "count"
+  }
+}
+
+resource "aws_network_acl_association" "private_subnet_2_nacl_assoc" {
+  network_acl_id = aws_network_acl.private_subnet_2_nacl.id
+  subnet_id      = data.aws_subnet.private_subnet_2.id
+}
+
+resource "aws_network_acl_rule" "private_subnet_2_nacl_ingress_rule" {
+  network_acl_id = aws_network_acl.private_subnet_2_nacl.id
+  rule_number    = 100
+  egress         = false
+  protocol       = "icmp"
+  rule_action    = "allow"
+  cidr_block     = data.aws_subnet.public_subnet_2.cidr_block
+  icmp_type      = 8
+  icmp_code      = 0
+}
+
+resource "aws_network_acl_rule" "private_subnet_2_nacl_ingress_default" {
+  network_acl_id = aws_network_acl.private_subnet_2_nacl.id
+  rule_number    = 101
+  egress         = false
+  protocol       = "all"
+  rule_action    = "deny"
+  cidr_block     = "0.0.0.0/0"
+  from_port      = -1
+  to_port        = -1
+}
+
+resource "aws_network_acl_rule" "private_subnet_2_nacl_egress_rule" {
+  network_acl_id = aws_network_acl.private_subnet_2_nacl.id
+  rule_number    = 100
+  egress         = true
+  protocol       = "icmp"
+  rule_action    = "allow"
+  cidr_block     = data.aws_subnet.public_subnet_2.cidr_block
+  icmp_type      = 0
+  icmp_code      = 0
+}
+
+resource "aws_network_acl_rule" "private_subnet_2_nacl_egress_rule_default" {
+  network_acl_id = aws_network_acl.private_subnet_2_nacl.id
+  rule_number    = 101
+  egress         = true
+  protocol       = "all"
+  rule_action    = "deny"
+  cidr_block     = "0.0.0.0/0"
+  from_port      = -1
+  to_port        = -1
+}
