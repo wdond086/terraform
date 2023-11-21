@@ -1,0 +1,5 @@
+bucket_prefix = "wdond086-web-app-data"
+domain        = "devopsdeployed.com"
+db_name       = "wdond086db"
+db_user       = "wdond086"
+# db_pass = "foobarbaz"
