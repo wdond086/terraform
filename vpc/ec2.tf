@@ -2,13 +2,22 @@
 
 # SG granting HTTP and SSH
 resource "aws_security_group" "ec2_web_and_ssh_access_sg" {
+  provider    = aws.us-east-1
   name        = "ec2_web_and_ssh_access_sg"
   description = "Allow HTTP and SSH inbound, and all outbound"
   vpc_id      = aws_vpc.custom_vpc.id
 }
 
+resource "aws_security_group" "ca_central_ping_sg" {
+  provider    = aws.ca-central-1
+  name        = "ca_central_ping_sg"
+  description = "Allow PING and SSH inbound, and all outbound"
+  vpc_id      = aws_vpc.ca_central_vpc.id
+}
+
 # Rule to allow HTTP ingress traffic
 resource "aws_security_group_rule" "ec2_ingress_http_rule" {
+  provider          = aws.us-east-1
   type              = "ingress"
   security_group_id = aws_security_group.ec2_web_and_ssh_access_sg.id
   from_port         = 80
@@ -20,6 +29,7 @@ resource "aws_security_group_rule" "ec2_ingress_http_rule" {
 
 # Rule to allow HTTP ingress traffic
 resource "aws_security_group_rule" "ec2_ingress_ssh_rule" {
+  provider          = aws.us-east-1
   type              = "ingress"
   security_group_id = aws_security_group.ec2_web_and_ssh_access_sg.id
   from_port         = 22
@@ -29,6 +39,50 @@ resource "aws_security_group_rule" "ec2_ingress_ssh_rule" {
   # cidr for instance connect retrieved from https://ip-ranges.amazonaws.com/ip-ranges.json
   cidr_blocks = ["142.188.147.216/32", "18.206.107.24/29"] # For testing
   description = "Allows SSH traffic on port 22 from my IP"
+}
+
+resource "aws_security_group_rule" "ca_central_ec2_ingress_rule_ssh" {
+  provider          = aws.ca-central-1
+  type              = "ingress"
+  security_group_id = aws_security_group.ca_central_ping_sg.id
+  from_port         = 22
+  to_port           = 22
+  protocol          = "tcp"
+  cidr_blocks       = ["35.183.92.176/29"]
+  description       = "Allows SSH traffic on port 22 from my EC2 instance connect"
+}
+
+resource "aws_security_group_rule" "us_east_ec2_ingress_rule_ping" {
+  provider          = aws.us-east-1
+  type              = "ingress"
+  security_group_id = aws_security_group.ec2_web_and_ssh_access_sg.id
+  from_port         = 8
+  to_port           = 0
+  protocol          = "icmp"
+  cidr_blocks       = [aws_vpc.ca_central_vpc.cidr_block]
+  description       = "Allows ping access from the VPC in ca-central-1"
+}
+
+resource "aws_security_group_rule" "ca_central_ping_access_rule" {
+  provider          = aws.ca-central-1
+  type              = "ingress"
+  security_group_id = aws_security_group.ca_central_ping_sg.id
+  from_port         = 8
+  to_port           = 0
+  protocol          = "icmp"
+  cidr_blocks       = [aws_vpc.custom_vpc.cidr_block]
+  description       = "Allows ping access from the VPC in us-east-1"
+}
+
+resource "aws_security_group_rule" "ca_central_all_egress_rule" {
+  provider          = aws.ca-central-1
+  type              = "egress"
+  security_group_id = aws_security_group.ca_central_ping_sg.id
+  from_port         = 0
+  to_port           = 0
+  protocol          = -1
+  cidr_blocks       = ["0.0.0.0/0"]
+  description       = "Allows all egress traffic"
 }
 
 resource "aws_security_group_rule" "ec2_egress_all" {
@@ -56,6 +110,26 @@ resource "aws_instance" "public_instances" {
             EOF
   tags = {
     Name        = "EC2 instance in Public Subnet: ${count.index + 1}"
+    Project     = "sa_vpc"
+    Terraform   = "true"
+    Environment = "dev"
+  }
+}
+
+resource "aws_instance" "ca_central_public_instance" {
+  provider                    = aws.ca-central-1
+  ami                         = "ami-095819c19b51bc983"
+  instance_type               = var.instance_type
+  vpc_security_group_ids      = [aws_security_group.ca_central_ping_sg.id]
+  subnet_id                   = aws_subnet.ca_central_public_subnet.id
+  associate_public_ip_address = true
+  user_data                   = <<-EOF
+            #!/bin/bash
+            echo "Hello, World from public instance 1" > index.html
+            python3 -m http.server 80
+            EOF
+  tags = {
+    Name        = "EC2 instance in Ca central 1 Public Subnet: 1"
     Project     = "sa_vpc"
     Terraform   = "true"
     Environment = "dev"
